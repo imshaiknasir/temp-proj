@@ -1,0 +1,66 @@
+name: Playwright Tests
+
+on:
+  workflow_dispatch:
+    inputs:
+      screenshot_mode:
+        description: Screenshot mode for Playwright
+        required: false
+        default: on
+        type: choice
+        options:
+          - on
+          - only-on-failure
+      trace_mode:
+        description: Trace mode for Playwright
+        required: false
+        default: on-first-retry
+        type: choice
+        options:
+          - on
+          - retain-on-failure
+          - on-first-retry
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    env:
+      PLAYWRIGHT_SCREENSHOT_MODE: ${{ github.event.inputs.screenshot_mode || 'on' }}
+      PLAYWRIGHT_TRACE_MODE: ${{ github.event.inputs.trace_mode || 'on-first-retry' }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Run Playwright tests
+        run: npx playwright test
+
+      - name: Generate Allure report
+        if: ${{ !cancelled() }}
+        run: npm run allure:generate
+
+      - name: Upload reports
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-reports
+          path: |
+            playwright-report/
+            allure-results/
+            allure-report/
+            test-results/
+          if-no-files-found: ignore
