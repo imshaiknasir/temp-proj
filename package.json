@@ -4,7 +4,10 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "allure:generate": "npx allure generate -o ./allure-report ./allure-results",
+    "prestart": "rm -rf allure-report allure-results playwright-report test-results",
+    "test": "npx playwright test || true",
+    "posttest": "npm run allure:generate && npm run allure:open",
+    "allure:generate": "node -e \"require('node:fs').rmSync('./allure-report', { recursive: true, force: true })\" && node ./utils/allure-patcher.js && npx allure generate ./allure-results -o ./allure-report && node ./utils/allure-patcher.js",
     "allure:open": "npx allure open ./allure-report"
   },
   "keywords": [],

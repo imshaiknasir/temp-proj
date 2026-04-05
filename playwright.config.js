@@ -1,13 +1,11 @@
 // @ts-check
 import { defineConfig, devices } from '@playwright/test';
+import * as os from 'node:os';
 
 /**
  * Read environment variables from file.
  * https://github.com/motdotla/dotenv
  */
-// import dotenv from 'dotenv';
-// import path from 'path';
-// dotenv.config({ path: path.resolve(__dirname, '.env') });
 
 /**
  * @see https://playwright.dev/docs/test-configuration
@@ -24,9 +22,29 @@ const traceMode = process.env.PLAYWRIGHT_TRACE_MODE === 'on'
 
 export default defineConfig({
   testDir: './tests',
+  globalSetup: './global-setup.js',
   fullyParallel: true,
-  reporter: [['html' ,{open: 'never'}], ['allure-playwright']],
+  reporter: [
+    ['html', { open: 'never' }],
+    [
+      'allure-playwright',
+      {
+        resultsDir: 'allure-results',
+        detail: true,
+        suiteTitle: true,
+        environmentInfo: {
+          OS: `${os.platform()} ${os.release()}`,
+          Host: os.hostname(),
+          Build: process.env.BUILD_NUMBER || process.env.GITHUB_RUN_NUMBER || 'local',
+          Environment: process.env.TEST_ENV || 'local',
+          Execution_Mode: process.env.GITHUB_ACTIONS ? 'GitHub Actions' : 'Local',
+          Node_Version: process.version,
+        },
+      },
+    ],
+  ],
   use: {
+    ignoreHTTPSErrors: true,
     screenshot: screenshotMode,
     trace: traceMode,
   },
